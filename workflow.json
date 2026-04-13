@@ -1,0 +1,104 @@
+{
+    "name": "HTTP to Sheets & Gemini AI",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "my-webhook",
+                "options": {}
+            },
+            "id": "1",
+            "name": "HTTP POST Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Process incoming HTTP POST data and extract the content field\nlet results = [];\n\nfor (const item of $input.all()) {\n  // Extract 'content' from the request body or provide a fallback\n  let content = item.json.body?.content || \"No content provided\";\n  \n  results.push({\n    json: {\n      content: content,\n      processedAt: new Date().toISOString()\n    }\n  });\n}\n\nreturn results;"
+            },
+            "id": "2",
+            "name": "Script node",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "append",
+                "documentId": {
+                    "value": "1BRuCEJySqbLK7eGS65GM4ymGfmHfHR0edQCbGY-jI3Q"
+                },
+                "sheetName": {
+                    "value": "Sheet1"
+                },
+                "options": {}
+            },
+            "id": "3",
+            "name": "Google Sheets node",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 3,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "text",
+                "operation": "generate",
+                "prompt": "=Please summarize the following content:\n\n{{$json.content}}",
+                "options": {}
+            },
+            "id": "4",
+            "name": "Gemini AI node",
+            "type": "n8n-nodes-base.googleGemini",
+            "typeVersion": 1,
+            "position": [
+                850,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "HTTP POST Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Script node",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Script node": {
+            "main": [
+                [
+                    {
+                        "node": "Google Sheets node",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Sheets node": {
+            "main": [
+                [
+                    {
+                        "node": "Gemini AI node",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
